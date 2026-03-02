@@ -27,14 +27,10 @@ let state = {
   goals: JSON.parse(localStorage.getItem('q_goals') || 'null') || { daily: '', weekly: '', monthly: '' },
   // Risk Calculator
   riskCalc: { accountSize: '', riskPct: '1', entryPrice: '', stopLoss: '', direction: 'long', result: null },
-  // Rules engine
   rules: JSON.parse(localStorage.getItem('q_rules') || '[]'),
-  violations: JSON.parse(localStorage.getItem('q_violations') || '{}'),
-  // Journal tab: 'quick' | 'structured'
+  violations: {},
   jTab: 'quick',
-  // Quick-add modal
   showQuickAdd: false,
-  // Weekly email
   emailSending: false,
 };
 
@@ -426,13 +422,28 @@ function empty(icon, title, sub) {
 
 // ── DASHBOARD ─────────────────────────────────────────────
 function dashboard(s) {
-  const streak = calcStreak(state.trades);
-  const totalViolations = Object.values(state.violations).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+  var streak = calcStreak(state.trades);
+  var violations = checkViolations();
+  var streakHtml = '';
+  if (streak.count > 0) {
+    var sClass = streak.type === 'win' ? 'streak-win' : 'streak-loss';
+    var sLabel = streak.type === 'win' ? '🔥 Win Streak' : '❄️ Loss Streak';
+    streakHtml = '<div class="card streak-card '+sClass+'">'
+      + '<div class="streak-number">'+streak.count+'</div>'
+      + '<div><div class="streak-label">'+sLabel+'</div>'
+      + '<div class="streak-sub">Last '+streak.count+' trades '+(streak.type==='win'?'profitable':'unprofitable')+'</div>'
+      + '</div></div>';
+  }
+  var violHtml = violations.length
+    ? '<div class="violations-alert" onclick="changeView(\'rules\')">'
+      + '<span>⚠️ <strong>'+violations.length+' rule violation'+(violations.length!==1?'s':'')+'</strong></span>'
+      + '<span style="color:var(--orange);font-size:0.8rem">Review →</span></div>'
+    : '';
   return `
     <div class="page-header">
       <h1 class="header">Dashboard</h1>
       <div style="display:flex;gap:0.6rem;align-items:center">
-        <button class="btn btn-secondary btn-sm hide-mobile" onclick="doWeeklySummary()" ${state.emailSending ? 'disabled' : ''}>
+        <button class="btn btn-secondary btn-sm hide-mobile" onclick="doWeeklySummary()" ${state.emailSending?'disabled':''}>
           ${state.emailSending ? '<span class="spinner"></span>' : '📧'} Weekly Summary
         </button>
         <button class="btn btn-primary hide-mobile" onclick="openAddTradeModal()">+ Add Trade</button>
@@ -446,17 +457,8 @@ function dashboard(s) {
       ${statCard('Profit Factor', s.profitFactor, 'Gross wins ÷ losses')}
       ${statCard('R-Multiple', s.rMultiple, 'Avg win ÷ avg loss')}
     </div>
-    ${streak.count > 0 ? `
-    <div class="card streak-card ${streak.type === 'win' ? 'streak-win' : 'streak-loss'}">
-      <div class="streak-number">${streak.count}</div>
-      <div class="streak-label">${streak.type === 'win' ? '🔥 Win Streak' : '❄️ Loss Streak'}</div>
-      <div class="streak-sub">Last ${streak.count} trades ${streak.type === 'win' ? 'profitable' : 'unprofitable'}</div>
-    </div>` : ''}
-    ${totalViolations > 0 ? `
-    <div class="violations-alert" onclick="changeView('rules')">
-      <span>⚠️ <strong>${totalViolations} rule violation${totalViolations !== 1 ? 's' : ''}</strong> across your trades</span>
-      <span style="color:var(--orange);font-size:0.8rem">Review →</span>
-    </div>` : ''}
+    ${streakHtml}
+    ${violHtml}
     <div class="card">
       <div class="card-title">Recent Trades</div>
       ${state.trades.length === 0
@@ -844,9 +846,7 @@ function analytics(s) {
                 <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
               </div>`;
           }).join('')}
-    </div>
-    ${dowSection()}
-    ${sessionsSection()}`;
+    </div>` + dowSection() + sessionsSection();
 }
 
 // ── CALENDAR ──────────────────────────────────────────────
@@ -949,42 +949,43 @@ function calendar() {
 function journal() {
   const today = new Date().toISOString().split('T')[0];
   const isStructured = state.jTab === 'structured';
+  const tabBar = '<div class="j-tab-bar">'
+    + '<button class="j-tab '+(isStructured?'':'active')+'" onclick="state.jTab=\'quick\';render()">Quick Entry</button>'
+    + '<button class="j-tab '+(isStructured?'active':'')+'" onclick="state.jTab=\'structured\';render()">Structured</button>'
+    + '</div>';
+  const structuredFields = isStructured ? `
+      <div class="form-group">
+        <label class="form-label">📋 Setup &amp; Plan</label>
+        <textarea class="form-textarea" id="jsetup" placeholder="What setups were you looking for?" style="min-height:70px"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">⚡ Execution</label>
+        <textarea class="form-textarea" id="jexec" placeholder="How did you execute? Did you follow your plan?" style="min-height:70px"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🧠 Emotions</label>
+        <textarea class="form-textarea" id="jemo" placeholder="Any FOMO, revenge trading, hesitation?" style="min-height:70px"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">📚 Lessons</label>
+        <textarea class="form-textarea" id="jlesson" placeholder="What will you do differently?" style="min-height:70px"></textarea>
+      </div>` : `
+      <div class="form-group">
+        <label class="form-label">Entry</label>
+        <textarea class="form-textarea" id="jcontent" placeholder="What did you learn today? How did you execute? How did you feel?" style="min-height:140px"></textarea>
+      </div>`;
+  const saveHandler = isStructured ? 'doSaveStructuredJournal()' : 'doSaveJournal()';
   return `
     <div class="page-header"><h1 class="header">Journal</h1></div>
     <div class="card">
-      <div class="j-tab-bar">
-        <button class="j-tab ${!isStructured ? 'active' : ''}" onclick="state.jTab='quick';render()">Quick Entry</button>
-        <button class="j-tab ${isStructured ? 'active' : ''}" onclick="state.jTab='structured';render()">Structured</button>
-      </div>
+      ${tabBar}
       <div class="form-group">
         <label class="form-label">Date</label>
         <input type="date" class="form-input" id="jdate" value="${today}" style="max-width:220px">
       </div>
-      ${isStructured ? `
-        <div class="form-group">
-          <label class="form-label">📋 Market Setup & Plan</label>
-          <textarea class="form-textarea" id="jsetup" placeholder="What setups were you looking for? What was the market bias?" style="min-height:80px"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">⚡ Execution</label>
-          <textarea class="form-textarea" id="jexec" placeholder="How did you execute? Did you follow your plan?" style="min-height:80px"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">🧠 Emotions & Psychology</label>
-          <textarea class="form-textarea" id="jemo" placeholder="How did you feel? Any FOMO, revenge trading, hesitation?" style="min-height:80px"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">📚 Lessons Learned</label>
-          <textarea class="form-textarea" id="jlesson" placeholder="What will you do differently tomorrow?" style="min-height:80px"></textarea>
-        </div>
-      ` : `
-        <div class="form-group">
-          <label class="form-label">Entry</label>
-          <textarea class="form-textarea" id="jcontent" placeholder="What did you learn today? How did you execute? How did you feel?" style="min-height:140px"></textarea>
-        </div>
-      `}
+      ${structuredFields}
       <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-primary" id="jsave" onclick="${isStructured ? 'doSaveStructuredJournal()' : 'doSaveJournal()'}">Save Entry</button>
+        <button class="btn btn-primary" id="jsave" onclick="${saveHandler}">Save Entry</button>
         ${isPremium()
           ? `<button class="btn btn-ai btn-sm" id="ai-draft-btn" onclick="doAIJournalDraft()">✨ Draft from Today's Trades</button>`
           : aiLockedBtn("Draft from Today's Trades")}
@@ -1023,7 +1024,6 @@ function journal() {
               </div>`;
           }).join('')}
     </div>`;
-}
 }
 
 // ── IMPORT ────────────────────────────────────────────────
@@ -2631,343 +2631,6 @@ function doAIJournalDraft() {
   );
 }
 
-// ── WIN/LOSS STREAK ────────────────────────────────────────
-function calcStreak(trades) {
-  const sorted = [...trades].filter(t => t.exit_date).sort((a,b) => new Date(b.exit_date) - new Date(a.exit_date));
-  if (!sorted.length) return { count: 0, type: 'win' };
-  const type = Number(sorted[0].pnl) >= 0 ? 'win' : 'loss';
-  let count = 0;
-  for (const t of sorted) {
-    const isWin = Number(t.pnl) >= 0;
-    if ((type === 'win' && isWin) || (type === 'loss' && !isWin)) count++;
-    else break;
-  }
-  return { count, type };
-}
-
-// ── DAY-OF-WEEK PERFORMANCE ────────────────────────────────
-function dowSection() {
-  const days = ['Mon','Tue','Wed','Thu','Fri'];
-  const byDow = { Mon:{pnl:0,count:0}, Tue:{pnl:0,count:0}, Wed:{pnl:0,count:0}, Thu:{pnl:0,count:0}, Fri:{pnl:0,count:0} };
-  state.trades.filter(t => t.exit_date).forEach(t => {
-    const dow = new Date(t.exit_date).toLocaleDateString('en-US', { weekday:'short' });
-    if (byDow[dow]) { byDow[dow].pnl += Number(t.pnl); byDow[dow].count++; }
-  });
-  const hasDow = Object.values(byDow).some(d => d.count > 0);
-  if (!hasDow) return '';
-  const maxAbs = Math.max(1, ...Object.values(byDow).map(d => Math.abs(d.pnl)));
-  return `
-    <div class="card">
-      <div class="card-title">Performance by Day</div>
-      <div class="dow-grid">
-        ${days.map(d => {
-          const { pnl, count } = byDow[d];
-          const pct = Math.abs(pnl) / maxAbs * 100;
-          const pos = pnl >= 0;
-          return `
-            <div class="dow-cell">
-              <div class="dow-label">${d}</div>
-              <div class="dow-bar-wrap">
-                <div class="dow-bar ${pos ? 'pos' : 'neg'}" style="height:${pct}%"></div>
-              </div>
-              <div class="dow-pnl ${pos ? 'positive' : 'negative'}">${pos ? '+' : ''}$${Math.abs(pnl).toFixed(0)}</div>
-              <div class="dow-count">${count}t</div>
-            </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-}
-
-// ── SESSIONS / TIME-OF-DAY ─────────────────────────────────
-function sessionsSection() {
-  const sessions = { 'Pre-Market':{pnl:0,count:0}, 'AM Session':{pnl:0,count:0}, 'Midday':{pnl:0,count:0}, 'PM Session':{pnl:0,count:0} };
-  state.trades.filter(t => t.entry_time || t.entry_date).forEach(t => {
-    const timeStr = t.entry_time || '';
-    const hour = timeStr ? parseInt(timeStr.split(':')[0]) : -1;
-    let session;
-    if (hour >= 4  && hour < 9)  session = 'Pre-Market';
-    else if (hour >= 9  && hour < 12) session = 'AM Session';
-    else if (hour >= 12 && hour < 14) session = 'Midday';
-    else if (hour >= 14 && hour < 20) session = 'PM Session';
-    else return;
-    sessions[session].pnl += Number(t.pnl); sessions[session].count++;
-  });
-  const hasSessions = Object.values(sessions).some(s => s.count > 0);
-  if (!hasSessions) return '';
-  return `
-    <div class="card">
-      <div class="card-title">Performance by Session</div>
-      ${Object.entries(sessions).filter(([,s]) => s.count > 0).map(([name, s]) => {
-        const pos = s.pnl >= 0;
-        return `
-          <div class="session-row">
-            <div class="session-name">${name}</div>
-            <div class="session-stats">
-              <span class="${pos ? 'positive' : 'negative'}">${pos ? '+' : ''}$${s.pnl.toFixed(2)}</span>
-              <span style="color:var(--text-muted);font-size:0.75rem">${s.count} trade${s.count !== 1 ? 's' : ''}</span>
-            </div>
-          </div>`;
-      }).join('')}
-    </div>`;
-}
-
-// ── RULES ENGINE ───────────────────────────────────────────
-function rulesView() {
-  const predefined = [
-    { id:'max_loss',    label:'Max Daily Loss',      hint:'Stop trading if daily loss exceeds this ($)' },
-    { id:'max_trades',  label:'Max Trades per Day',  hint:'Stop adding trades after this count' },
-    { id:'min_rr',      label:'Minimum R:R Ratio',   hint:'Only take trades with at least this reward:risk' },
-    { id:'no_revenge',  label:'No Revenge Trading',  hint:'Flag back-to-back losing trades < 5 min apart' },
-    { id:'no_oversize', label:'No Oversizing',       hint:'Position size must not exceed 5% of account' },
-  ];
-  return `
-    <div class="page-header"><h1 class="header">Rules Engine</h1></div>
-    <div class="card">
-      <div class="card-title">My Rules</div>
-      <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1.25rem">Define your trading rules. Quantario will flag violations automatically.</p>
-      ${predefined.map(rule => {
-        const active = state.rules.find(r => r.id === rule.id);
-        return `
-          <div class="rule-item ${active ? 'active' : ''}">
-            <div class="rule-info">
-              <div class="rule-name">${rule.label}</div>
-              <div class="rule-hint">${rule.hint}</div>
-              ${['max_loss','max_trades','min_rr'].includes(rule.id) ? `
-                <input type="number" class="form-input rule-input" id="rule-val-${rule.id}"
-                  placeholder="Set value…" value="${active?.value || ''}"
-                  onchange="setRule('${rule.id}', this.value)"
-                  style="max-width:120px;margin-top:0.5rem">
-              ` : ''}
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleRule('${rule.id}', this.checked)">
-              <span class="toggle-track"></span>
-            </label>
-          </div>`;
-      }).join('')}
-    </div>
-    <div class="card">
-      <div class="card-title">Add Custom Rule</div>
-      <div class="form-group">
-        <input type="text" class="form-input" id="custom-rule-text" placeholder="e.g. Never trade the first 15 minutes">
-      </div>
-      <button class="btn btn-primary btn-sm" onclick="addCustomRule()">Add Rule</button>
-    </div>
-    ${state.rules.filter(r => r.custom).length > 0 ? `
-    <div class="card">
-      <div class="card-title">Custom Rules</div>
-      ${state.rules.filter(r => r.custom).map(r => `
-        <div class="rule-item active">
-          <div class="rule-info"><div class="rule-name">${esc(r.label)}</div></div>
-          <button class="journal-delete" onclick="deleteCustomRule('${r.id}')">✕</button>
-        </div>`).join('')}
-    </div>` : ''}
-    ${checkViolations().length > 0 ? `
-    <div class="card">
-      <div class="card-title violations-title">⚠️ Violations Detected</div>
-      ${checkViolations().map(v => `
-        <div class="violation-row">
-          <div class="violation-label">${v.label}</div>
-          <div class="violation-detail">${v.detail}</div>
-        </div>`).join('')}
-    </div>` : `
-    <div class="card">
-      ${empty('✅', 'No violations', 'Your trading is in line with all your rules')}
-    </div>`}`;
-}
-
-function toggleRule(id, enabled) {
-  if (!enabled) {
-    state.rules = state.rules.filter(r => r.id !== id);
-  } else if (!state.rules.find(r => r.id === id)) {
-    state.rules.push({ id, value: null });
-  }
-  saveRules();
-  render();
-}
-
-function setRule(id, value) {
-  const rule = state.rules.find(r => r.id === id);
-  if (rule) rule.value = parseFloat(value) || null;
-  saveRules();
-}
-
-function addCustomRule() {
-  const input = document.getElementById('custom-rule-text');
-  const text = input?.value.trim();
-  if (!text) return;
-  const id = 'custom_' + Date.now();
-  state.rules.push({ id, label: text, custom: true });
-  saveRules();
-  render();
-}
-
-function deleteCustomRule(id) {
-  state.rules = state.rules.filter(r => r.id !== id);
-  saveRules();
-  render();
-}
-
-function saveRules() {
-  localStorage.setItem('q_rules', JSON.stringify(state.rules));
-}
-
-function checkViolations() {
-  const violations = [];
-  const maxLossRule = state.rules.find(r => r.id === 'max_loss' && r.value);
-  if (maxLossRule) {
-    const dailyMap = {};
-    state.trades.forEach(t => {
-      const d = t.exit_date?.split('T')[0];
-      if (d) dailyMap[d] = (dailyMap[d] || 0) + Number(t.pnl);
-    });
-    Object.entries(dailyMap).forEach(([date, pnl]) => {
-      if (pnl < -maxLossRule.value) {
-        violations.push({ label: `Max Daily Loss exceeded on ${date}`, detail: `Loss: $${Math.abs(pnl).toFixed(2)} (limit: $${maxLossRule.value})` });
-      }
-    });
-  }
-  const maxTradesRule = state.rules.find(r => r.id === 'max_trades' && r.value);
-  if (maxTradesRule) {
-    const dailyCount = {};
-    state.trades.forEach(t => {
-      const d = t.exit_date?.split('T')[0];
-      if (d) dailyCount[d] = (dailyCount[d] || 0) + 1;
-    });
-    Object.entries(dailyCount).forEach(([date, count]) => {
-      if (count > maxTradesRule.value) {
-        violations.push({ label: `Max trades exceeded on ${date}`, detail: `${count} trades (limit: ${maxTradesRule.value})` });
-      }
-    });
-  }
-  return violations;
-}
-
-// ── QUICK ADD MODAL ────────────────────────────────────────
-function quickAddModal() {
-  return `
-    <div class="modal-overlay" onclick="if(event.target===this){state.showQuickAdd=false;render()}">
-      <div class="modal modal-sm">
-        <div class="modal-header">
-          <div class="modal-title">Quick Add Trade</div>
-          <button class="modal-close" onclick="state.showQuickAdd=false;render()">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Symbol</label>
-            <input type="text" class="form-input" id="qa-symbol" placeholder="AAPL" style="text-transform:uppercase">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">P&amp;L ($)</label>
-              <input type="number" class="form-input" id="qa-pnl" placeholder="250.00" step="0.01">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Direction</label>
-              <select class="form-input" id="qa-direction">
-                <option value="long">Long</option>
-                <option value="short">Short</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Asset Type</label>
-              <select class="form-input" id="qa-asset">
-                <option value="stock">Stock</option>
-                <option value="crypto">Crypto</option>
-                <option value="forex">Forex</option>
-                <option value="futures">Futures</option>
-                <option value="options">Options</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Date</label>
-              <input type="date" class="form-input" id="qa-date" value="${new Date().toISOString().split('T')[0]}">
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Notes (optional)</label>
-            <input type="text" class="form-input" id="qa-notes" placeholder="Quick note…">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-ghost" onclick="state.showQuickAdd=false;render()">Cancel</button>
-          <button class="btn btn-primary" onclick="doQuickSave()">Save Trade</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-async function doQuickSave() {
-  const symbol    = document.getElementById('qa-symbol')?.value.trim().toUpperCase();
-  const pnl       = document.getElementById('qa-pnl')?.value;
-  const direction = document.getElementById('qa-direction')?.value;
-  const asset     = document.getElementById('qa-asset')?.value;
-  const date      = document.getElementById('qa-date')?.value;
-  const notes     = document.getElementById('qa-notes')?.value.trim();
-  if (!symbol || !pnl || !date) { toast('Symbol, P&L, and date are required', 'error'); return; }
-  try {
-    await api.addTrade({ symbol, pnl: parseFloat(pnl), direction, asset_type: asset, entry_date: date, exit_date: date, notes: notes || null, quantity: 1, entry_price: 0, exit_price: 0 });
-    state.showQuickAdd = false;
-    await loadTrades();
-    toast('Trade added!', 'success');
-  } catch (e) {
-    toast(e.message || 'Failed to save', 'error');
-  }
-}
-
-// ── STRUCTURED JOURNAL SAVE ────────────────────────────────
-async function doSaveStructuredJournal() {
-  const date   = document.getElementById('jdate')?.value;
-  const setup  = document.getElementById('jsetup')?.value.trim();
-  const exec   = document.getElementById('jexec')?.value.trim();
-  const emo    = document.getElementById('jemo')?.value.trim();
-  const lesson = document.getElementById('jlesson')?.value.trim();
-  if (!date) { toast('Please select a date', 'error'); return; }
-  const content = [
-    setup  ? `📋 SETUP\n${setup}`   : '',
-    exec   ? `⚡ EXECUTION\n${exec}` : '',
-    emo    ? `🧠 EMOTIONS\n${emo}`   : '',
-    lesson ? `📚 LESSONS\n${lesson}` : '',
-  ].filter(Boolean).join('\n\n');
-  if (!content) { toast('Please fill in at least one section', 'error'); return; }
-  const btn = document.getElementById('jsave');
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
-  try {
-    await api.addJournalEntry({ entry_date: date, content });
-    state.journalEntries = await api.getJournalEntries();
-    toast('Entry saved!', 'success');
-    render();
-  } catch (e) {
-    toast(e.message || 'Failed to save', 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'Save Entry'; }
-  }
-}
-
-// ── WEEKLY EMAIL SUMMARY ────────────────────────────────────
-async function doWeeklySummary() {
-  if (state.emailSending) return;
-  state.emailSending = true;
-  render();
-  try {
-    const resp = await fetch('/api/email/weekly-summary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...api.authHeaders() },
-    });
-    if (!resp.ok) {
-      const data = await resp.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to send');
-    }
-    toast('Weekly summary sent to your email!', 'success');
-  } catch (e) {
-    toast(e.message || 'Failed to send email', 'error');
-  } finally {
-    state.emailSending = false;
-    render();
-  }
-}
-
 // ── AUTH ──────────────────────────────────────────────────
 function handleLogout() {
   showConfirm('Log out of Quantario?', () => {
@@ -3011,3 +2674,258 @@ function toggleMobileMore() {
 
 // ── INIT ──────────────────────────────────────────────────
 init();
+
+// ── NEW V3 FEATURES ───────────────────────────────────────
+
+// Win/loss streak
+function calcStreak(trades) {
+  var sorted = trades.filter(function(t){ return t.exit_date; }).sort(function(a,b){ return new Date(b.exit_date)-new Date(a.exit_date); });
+  if (!sorted.length) return { count: 0, type: 'win' };
+  var type = Number(sorted[0].pnl) >= 0 ? 'win' : 'loss';
+  var count = 0;
+  for (var i = 0; i < sorted.length; i++) {
+    var isWin = Number(sorted[i].pnl) >= 0;
+    if ((type === 'win' && isWin) || (type === 'loss' && !isWin)) count++;
+    else break;
+  }
+  return { count: count, type: type };
+}
+
+// Day-of-week performance card (returns HTML string)
+function dowSection() {
+  var days = ['Mon','Tue','Wed','Thu','Fri'];
+  var byDow = {};
+  days.forEach(function(d){ byDow[d] = {pnl:0,count:0}; });
+  state.trades.filter(function(t){ return t.exit_date; }).forEach(function(t) {
+    var dow = new Date(t.exit_date).toLocaleDateString('en-US',{weekday:'short'});
+    if (byDow[dow]) { byDow[dow].pnl += Number(t.pnl); byDow[dow].count++; }
+  });
+  if (!days.some(function(d){ return byDow[d].count > 0; })) return '';
+  var maxAbs = Math.max(1, Math.max.apply(null, days.map(function(d){ return Math.abs(byDow[d].pnl); })));
+  var cells = days.map(function(d) {
+    var pnl = byDow[d].pnl, count = byDow[d].count;
+    var pct = (Math.abs(pnl)/maxAbs*100).toFixed(1);
+    var pos = pnl >= 0;
+    return '<div class="dow-cell">'
+      + '<div class="dow-label">'+d+'</div>'
+      + '<div class="dow-bar-wrap"><div class="dow-bar '+(pos?'pos':'neg')+'" style="height:'+pct+'%"></div></div>'
+      + '<div class="dow-pnl '+(pos?'positive':'negative')+'">'+(pos?'+':'')+'$'+Math.abs(pnl).toFixed(0)+'</div>'
+      + '<div class="dow-count">'+count+'t</div>'
+      + '</div>';
+  }).join('');
+  return '<div class="card"><div class="card-title">Performance by Day</div><div class="dow-grid">'+cells+'</div></div>';
+}
+
+// Sessions performance (returns HTML string)
+function sessionsSection() {
+  var sessions = { 'Pre-Market':{pnl:0,count:0}, 'AM Session':{pnl:0,count:0}, 'Midday':{pnl:0,count:0}, 'PM Session':{pnl:0,count:0} };
+  state.trades.filter(function(t){ return t.entry_time; }).forEach(function(t) {
+    var hour = parseInt((t.entry_time||'').split(':')[0]);
+    var session;
+    if (hour >= 4 && hour < 9)   session = 'Pre-Market';
+    else if (hour >= 9 && hour < 12) session = 'AM Session';
+    else if (hour >= 12 && hour < 14) session = 'Midday';
+    else if (hour >= 14 && hour < 20) session = 'PM Session';
+    else return;
+    sessions[session].pnl += Number(t.pnl); sessions[session].count++;
+  });
+  var active = Object.entries(sessions).filter(function(e){ return e[1].count > 0; });
+  if (!active.length) return '';
+  var rows = active.map(function(e) {
+    var name = e[0], s = e[1], pos = s.pnl >= 0;
+    return '<div class="session-row">'
+      + '<div class="session-name">'+name+'</div>'
+      + '<div class="session-stats">'
+      + '<span class="'+(pos?'positive':'negative')+'">'+(pos?'+':'')+'$'+s.pnl.toFixed(2)+'</span>'
+      + '<span style="color:var(--text-muted);font-size:0.75rem">'+s.count+' trade'+(s.count!==1?'s':'')+'</span>'
+      + '</div></div>';
+  }).join('');
+  return '<div class="card"><div class="card-title">Performance by Session</div>'+rows+'</div>';
+}
+
+// Rules engine view
+function rulesView() {
+  var predefined = [
+    { id:'max_loss',    label:'Max Daily Loss',     hint:'Stop trading if daily loss exceeds this ($)', hasValue:true },
+    { id:'max_trades',  label:'Max Trades per Day', hint:'Flag days with more trades than this',       hasValue:true },
+    { id:'min_rr',      label:'Minimum R:R Ratio',  hint:'Flag trades below this reward:risk',         hasValue:true },
+    { id:'no_revenge',  label:'No Revenge Trading', hint:'Flag back-to-back losses under 5 minutes',   hasValue:false },
+  ];
+  var violations = checkViolations();
+  var html = '<div class="page-header"><h1 class="header">Rules Engine</h1></div>';
+  html += '<div class="card"><div class="card-title">My Rules</div>';
+  html += '<p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1.25rem">Define your trading rules. Quantario flags violations automatically.</p>';
+  predefined.forEach(function(rule) {
+    var active = state.rules.find(function(r){ return r.id === rule.id; });
+    html += '<div class="rule-item '+(active?'active':'')+'">'
+      + '<div class="rule-info">'
+      + '<div class="rule-name">'+rule.label+'</div>'
+      + '<div class="rule-hint">'+rule.hint+'</div>'
+      + (rule.hasValue ? '<input type="number" class="form-input rule-input" id="rule-val-'+rule.id+'" placeholder="Set value…" value="'+(active&&active.value||'')+'" onchange="setRule(\''+rule.id+'\',this.value)" style="max-width:110px;margin-top:0.5rem">' : '')
+      + '</div>'
+      + '<label class="toggle-switch"><input type="checkbox" '+(active?'checked':'')+' onchange="toggleRule(\''+rule.id+'\',this.checked)"><span class="toggle-track"></span></label>'
+      + '</div>';
+  });
+  html += '</div>';
+
+  // Custom rules
+  html += '<div class="card"><div class="card-title">Add Custom Rule</div>'
+    + '<div class="form-group"><input type="text" class="form-input" id="custom-rule-text" placeholder="e.g. Never trade the first 15 minutes"></div>'
+    + '<button class="btn btn-primary btn-sm" onclick="addCustomRule()">Add Rule</button>';
+  var customs = state.rules.filter(function(r){ return r.custom; });
+  if (customs.length) {
+    html += '<div style="margin-top:1rem">';
+    customs.forEach(function(r) {
+      html += '<div class="rule-item active"><div class="rule-info"><div class="rule-name">'+esc(r.label)+'</div></div>'
+        + '<button class="journal-delete" onclick="deleteCustomRule(\''+r.id+'\')">✕</button></div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Violations
+  if (violations.length) {
+    html += '<div class="card"><div class="card-title violations-title">⚠️ Violations</div>';
+    violations.forEach(function(v) {
+      html += '<div class="violation-row"><div class="violation-label">'+v.label+'</div><div class="violation-detail">'+v.detail+'</div></div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="card">'+empty('✅','No violations','Your trading is within your rules')+'</div>';
+  }
+  return html;
+}
+
+function checkViolations() {
+  var violations = [];
+  var maxLossRule = state.rules.find(function(r){ return r.id==='max_loss' && r.value; });
+  if (maxLossRule) {
+    var dailyMap = {};
+    state.trades.forEach(function(t) { var d=t.exit_date&&t.exit_date.split('T')[0]; if(d) dailyMap[d]=(dailyMap[d]||0)+Number(t.pnl); });
+    Object.entries(dailyMap).forEach(function(e) {
+      if (e[1] < -maxLossRule.value) violations.push({ label:'Max Daily Loss exceeded on '+e[0], detail:'Loss: $'+Math.abs(e[1]).toFixed(2)+' (limit: $'+maxLossRule.value+')' });
+    });
+  }
+  var maxTradesRule = state.rules.find(function(r){ return r.id==='max_trades' && r.value; });
+  if (maxTradesRule) {
+    var dailyCount = {};
+    state.trades.forEach(function(t) { var d=t.exit_date&&t.exit_date.split('T')[0]; if(d) dailyCount[d]=(dailyCount[d]||0)+1; });
+    Object.entries(dailyCount).forEach(function(e) {
+      if (e[1] > maxTradesRule.value) violations.push({ label:'Max trades exceeded on '+e[0], detail:e[1]+' trades (limit: '+maxTradesRule.value+')' });
+    });
+  }
+  return violations;
+}
+
+function toggleRule(id, enabled) {
+  if (!enabled) { state.rules = state.rules.filter(function(r){ return r.id!==id; }); }
+  else if (!state.rules.find(function(r){ return r.id===id; })) { state.rules.push({ id:id, value:null }); }
+  localStorage.setItem('q_rules', JSON.stringify(state.rules)); render();
+}
+
+function setRule(id, value) {
+  var rule = state.rules.find(function(r){ return r.id===id; });
+  if (rule) rule.value = parseFloat(value)||null;
+  localStorage.setItem('q_rules', JSON.stringify(state.rules));
+}
+
+function addCustomRule() {
+  var input = document.getElementById('custom-rule-text');
+  var text = input && input.value.trim();
+  if (!text) return;
+  state.rules.push({ id:'custom_'+Date.now(), label:text, custom:true });
+  localStorage.setItem('q_rules', JSON.stringify(state.rules)); render();
+}
+
+function deleteCustomRule(id) {
+  state.rules = state.rules.filter(function(r){ return r.id!==id; });
+  localStorage.setItem('q_rules', JSON.stringify(state.rules)); render();
+}
+
+// Quick-add modal
+function quickAddModal() {
+  var today = new Date().toISOString().split('T')[0];
+  return '<div class="modal-overlay" onclick="if(event.target===this){state.showQuickAdd=false;render()}">'
+    + '<div class="modal modal-sm">'
+    + '<div class="modal-header"><div class="modal-title">Quick Add Trade</div>'
+    + '<button class="modal-close" onclick="state.showQuickAdd=false;render()">✕</button></div>'
+    + '<div class="modal-body">'
+    + '<div class="form-group"><label class="form-label">Symbol</label>'
+    + '<input type="text" class="form-input" id="qa-symbol" placeholder="AAPL" style="text-transform:uppercase"></div>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label class="form-label">P&amp;L ($)</label>'
+    + '<input type="number" class="form-input" id="qa-pnl" placeholder="250.00" step="0.01"></div>'
+    + '<div class="form-group"><label class="form-label">Direction</label>'
+    + '<select class="form-input" id="qa-direction"><option value="long">Long</option><option value="short">Short</option></select></div>'
+    + '</div>'
+    + '<div class="form-row">'
+    + '<div class="form-group"><label class="form-label">Asset Type</label>'
+    + '<select class="form-input" id="qa-asset"><option value="stock">Stock</option><option value="crypto">Crypto</option><option value="forex">Forex</option><option value="futures">Futures</option><option value="options">Options</option></select></div>'
+    + '<div class="form-group"><label class="form-label">Date</label>'
+    + '<input type="date" class="form-input" id="qa-date" value="'+today+'"></div>'
+    + '</div>'
+    + '<div class="form-group"><label class="form-label">Notes (optional)</label>'
+    + '<input type="text" class="form-input" id="qa-notes" placeholder="Quick note…"></div>'
+    + '</div>'
+    + '<div class="modal-footer">'
+    + '<button class="btn btn-ghost" onclick="state.showQuickAdd=false;render()">Cancel</button>'
+    + '<button class="btn btn-primary" onclick="doQuickSave()">Save Trade</button>'
+    + '</div></div></div>';
+}
+
+async function doQuickSave() {
+  var symbol = (document.getElementById('qa-symbol')||{}).value;
+  var pnl    = (document.getElementById('qa-pnl')||{}).value;
+  var dir    = (document.getElementById('qa-direction')||{}).value;
+  var asset  = (document.getElementById('qa-asset')||{}).value;
+  var date   = (document.getElementById('qa-date')||{}).value;
+  var notes  = (document.getElementById('qa-notes')||{}).value;
+  symbol = symbol ? symbol.trim().toUpperCase() : '';
+  notes  = notes  ? notes.trim() : '';
+  if (!symbol || !pnl || !date) { toast('Symbol, P&L, and date are required','error'); return; }
+  try {
+    await api.addTrade({ symbol:symbol, pnl:parseFloat(pnl), direction:dir, asset_type:asset, entry_date:date, exit_date:date, notes:notes||null, quantity:1, entry_price:0, exit_price:0 });
+    state.showQuickAdd = false;
+    await loadTrades();
+    toast('Trade added!','success');
+  } catch(e) { toast(e.message||'Failed to save','error'); }
+}
+
+// Weekly email summary
+async function doWeeklySummary() {
+  if (state.emailSending) return;
+  state.emailSending = true; render();
+  try {
+    var resp = await fetch('/api/email/weekly-summary', { method:'POST', headers:Object.assign({'Content-Type':'application/json'}, api.authHeaders ? api.authHeaders() : {}) });
+    if (!resp.ok) { var d = await resp.json().catch(function(){ return {}; }); throw new Error(d.error||'Failed to send'); }
+    toast('Weekly summary sent!','success');
+  } catch(e) { toast(e.message||'Failed to send email','error'); }
+  state.emailSending = false; render();
+}
+
+// Structured journal save
+async function doSaveStructuredJournal() {
+  var date   = (document.getElementById('jdate')||{}).value;
+  var setup  = ((document.getElementById('jsetup')||{}).value||'').trim();
+  var exec   = ((document.getElementById('jexec')||{}).value||'').trim();
+  var emo    = ((document.getElementById('jemo')||{}).value||'').trim();
+  var lesson = ((document.getElementById('jlesson')||{}).value||'').trim();
+  if (!date) { toast('Please select a date','error'); return; }
+  var parts = [];
+  if (setup)  parts.push('SETUP\n'+setup);
+  if (exec)   parts.push('EXECUTION\n'+exec);
+  if (emo)    parts.push('EMOTIONS\n'+emo);
+  if (lesson) parts.push('LESSONS\n'+lesson);
+  if (!parts.length) { toast('Please fill in at least one section','error'); return; }
+  var content = parts.join('\n\n');
+  var btn = document.getElementById('jsave');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    await api.addJournalEntry({ entry_date:date, content:content });
+    state.journalEntries = await api.getJournalEntries();
+    toast('Entry saved!','success'); render();
+  } catch(e) {
+    toast(e.message||'Failed to save','error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Entry'; }
+  }
+}
