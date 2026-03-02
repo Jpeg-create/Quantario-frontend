@@ -69,6 +69,20 @@ const api = {
   updateTrade: (id, data)  => request('PUT',    `/trades/${id}`, data),
   deleteTrade: (id)        => request('DELETE', `/trades/${id}`),
 
+  // Screenshot upload (Cloudflare R2 via backend presigned URL)
+  // Backend: POST /uploads/screenshot → returns { url: "https://r2.your-bucket.com/..." }
+  uploadScreenshot: async (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(`${CONFIG.API_BASE}/uploads/screenshot`, {
+      method: 'POST', body: fd, credentials: 'include',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error || 'Upload failed');
+    return j; // { url: string }
+  },
+
   // Journal
   getJournal:    ()     => request('GET',    '/journal'),
   createJournal: (data) => request('POST',   '/journal', data),
@@ -107,9 +121,6 @@ const api = {
   addBroker:    (data) => request('POST',   '/brokers', data),
   deleteBroker: (id)   => request('DELETE', `/brokers/${id}`),
   syncBroker:   (id)   => request('POST',   `/brokers/${id}/sync`),
-
-  // Email
-  sendWeeklySummary: () => request('POST', '/email/weekly-summary'),
 
   // Health ping (used to pre-warm the server)
   ping: () => {
