@@ -1,6 +1,6 @@
 // ── Quantario Service Worker ──────────────────────────────
 // Cache-first for assets, network-first for API calls
-const CACHE_NAME = 'quantario-v3';
+const CACHE_NAME = 'quantario-v4';
 const STATIC_ASSETS = [
   '/app',
   '/login',

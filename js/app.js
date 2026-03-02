@@ -281,6 +281,16 @@ function render() {
           <div class="logo-icon"><svg width="34" height="34" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="qlogo" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FF6535"/><stop offset="100%" stop-color="#FF2D6B"/></linearGradient></defs><circle cx="16" cy="16" r="14" stroke="url(#qlogo)" stroke-width="2.5" fill="none"/><circle cx="16" cy="16" r="5" fill="url(#qlogo)" opacity="0.12"/><circle cx="16" cy="16" r="2.2" fill="url(#qlogo)"/><circle cx="16" cy="4.5" r="1.8" fill="url(#qlogo)"/><circle cx="16" cy="27.5" r="1.8" fill="url(#qlogo)"/><circle cx="4.5" cy="16" r="1.8" fill="url(#qlogo)"/><circle cx="27.5" cy="16" r="1.8" fill="url(#qlogo)"/></svg></div>
           <div class="logo-text">Quan<span>tario</span></div>
         </div>
+        <div class="sidebar-balance">
+          <div class="sidebar-balance-label">Account Balance</div>
+          <div class="sidebar-balance-value">${(function(){
+            const totalPnL = state.trades.reduce((s,t) => s+Number(t.pnl),0);
+            return (totalPnL >= 0 ? '+' : '') + '$' + totalPnL.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+          })()}</div>
+          <div class="sidebar-balance-change" style="color:${state.trades.reduce((s,t)=>s+Number(t.pnl),0)>=0?'var(--green)':'var(--red)'}">
+            ${state.trades.length} total trades
+          </div>
+        </div>
         <nav style="flex:1">
           <div class="nav-section-label">OVERVIEW</div>
           <button class="nav-item ${state.currentView === 'dashboard' ? 'active' : ''}" onclick="changeView('dashboard')"><span class="nav-icon">${NAV_ICONS.dashboard}</span>Dashboard</button>
@@ -401,13 +411,16 @@ function skeleton() {
     </div>`;
 }
 
-function statCard(label, value, sub, positive = null) {
+function statCard(label, value, sub, positive = null, trades = []) {
   const colorClass = positive === true ? 'positive' : positive === false ? 'negative' : '';
   return `
     <div class="stat-card">
-      <div class="stat-label">${label}</div>
+      <div class="stat-card-top">
+        <div class="stat-label">${label}</div>
+      </div>
       <div class="stat-value ${colorClass}">${value}</div>
       <div class="stat-change">${sub}</div>
+      <div class="stat-sparkline">${sparkline(trades, positive)}</div>
     </div>`;
 }
 
@@ -450,16 +463,18 @@ function dashboard(s) {
       </div>
     </div>
     <div class="stats-grid">
-      ${statCard('Total P&L', `${s.totalPnL >= 0 ? '+' : ''}$${s.totalPnL.toFixed(2)}`, `${s.winningTrades}W / ${s.losingTrades}L`, s.totalPnL >= 0)}
-      ${statCard('Win Rate', `${s.winRate}%`, `${s.totalTrades} total trades`)}
-      ${statCard('Avg Win', `$${s.avgWin.toFixed(2)}`, 'Per winning trade', true)}
-      ${statCard('Avg Loss', `$${s.avgLoss.toFixed(2)}`, 'Per losing trade', false)}
-      ${statCard('Profit Factor', s.profitFactor, 'Gross wins ÷ losses')}
-      ${statCard('R-Multiple', s.rMultiple, 'Avg win ÷ avg loss')}
+      ${statCard('Net P&L', `${s.totalPnL >= 0 ? '+' : ''}$${s.totalPnL.toFixed(2)}`, `${s.winningTrades}W / ${s.losingTrades}L`, s.totalPnL >= 0, state.trades)}
+      ${statCard('Day Win', `${s.winRate}%`, `${s.totalTrades} total trades`, null, state.trades)}
+      ${statCard('AVG Win Trade', `$${s.avgWin.toFixed(2)}`, 'Per winning trade', true, state.trades.filter(t => Number(t.pnl) > 0))}
+      ${statCard('AVG Loss Trade', `$${s.avgLoss.toFixed(2)}`, 'Per losing trade', false, state.trades.filter(t => Number(t.pnl) < 0))}
     </div>
     ${streakHtml}
     ${violHtml}
-    <div class="card">
+    <div class="section-title">Sessions</div>
+    ${sessionsPanel()}
+    <div class="section-title" style="margin-top:1.5rem">Monthly Overview</div>
+    ${weeklyCalendar()}
+    <div class="card" style="margin-top:1rem">
       <div class="card-title">Recent Trades</div>
       ${state.trades.length === 0
         ? empty('📊', 'No trades yet', 'Tap the + button or click "Add Trade" to log your first trade')
@@ -2629,6 +2644,222 @@ function doAIJournalDraft() {
       if (btn) { btn.disabled = false; btn.innerHTML = '✨ Draft from Today\'s Trades'; }
     }
   );
+}
+
+
+// ── SPARKLINE SVG ─────────────────────────────────────────
+function sparkline(trades, positive) {
+  // Build last 30 days of daily P&L
+  const now = new Date();
+  const days = {};
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    days[key] = 0;
+  }
+  trades.filter(t => t.exit_date).forEach(t => {
+    const key = t.exit_date.split('T')[0];
+    if (key in days) days[key] += Number(t.pnl);
+  });
+  const vals = Object.values(days);
+  if (vals.every(v => v === 0)) {
+    // flat line placeholder
+    return `<svg viewBox="0 0 120 40" preserveAspectRatio="none" style="width:100%;height:40px"><line x1="0" y1="20" x2="120" y2="20" stroke="var(--text-muted)" stroke-width="1.5" opacity="0.3"/></svg>`;
+  }
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const range = max - min || 1;
+  const W = 120, H = 40, PAD = 3;
+  const pts = vals.map((v, i) => {
+    const x = (i / (vals.length - 1)) * W;
+    const y = PAD + (1 - (v - min) / range) * (H - PAD * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const color = positive === false ? 'var(--red)' : positive === true ? 'var(--green)' : 'var(--orange)';
+  const fillPts = `0,${H} ` + pts + ` ${W},${H}`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:40px">
+    <defs>
+      <linearGradient id="sg${positive}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <polygon points="${fillPts}" fill="url(#sg${positive})"/>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// ── SESSIONS PANEL ────────────────────────────────────────
+function sessionsPanel() {
+  const now = new Date();
+  const utcH = now.getUTCHours();
+  const utcM = now.getUTCMinutes();
+  const utcMins = utcH * 60 + utcM;
+
+  const sessions = [
+    { name: 'London',   flag: '🇬🇧', tz: 'GMT+0', offsetMins: 0,   startH: 8,  endH: 17 },
+    { name: 'New York', flag: '🇺🇸', tz: 'GMT-5', offsetMins: -300, startH: 13, endH: 22 },
+    { name: 'Asia',     flag: '🇯🇵', tz: 'GMT+9', offsetMins: 540,  startH: 0,  endH: 9  },
+    { name: 'Outside',  flag: '🌐', tz: 'No timezone', offsetMins: null, startH: null, endH: null },
+  ];
+
+  // Calculate session stats from trades
+  function getSessionStats(session) {
+    const filtered = state.trades.filter(t => {
+      if (!t.entry_time && !t.exit_date) return false;
+      if (session.name === 'Outside') return true; // catch-all for outside section
+      const tradeDate = new Date(t.exit_date || t.entry_date);
+      const tradeUTCMins = tradeDate.getUTCHours() * 60 + tradeDate.getUTCMinutes();
+      const localMins = (tradeUTCMins + session.offsetMins + 1440) % 1440;
+      return localMins >= session.startH * 60 && localMins < session.endH * 60;
+    });
+    const wins = filtered.filter(t => Number(t.pnl) > 0).length;
+    const totalPnL = filtered.reduce((s, t) => s + Number(t.pnl), 0);
+    const pct = filtered.length ? ((wins / filtered.length) * 100).toFixed(2) : '0.00';
+    return { count: filtered.length, wins, pct, totalPnL };
+  }
+
+  function getLocalTime(offsetMins) {
+    if (offsetMins === null) return 'Outside';
+    const d = new Date();
+    const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+    const local = new Date(utc + offsetMins * 60000);
+    return local.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  function isActive(session) {
+    if (session.offsetMins === null) return false;
+    const localMins = (utcMins + session.offsetMins + 1440) % 1440;
+    return localMins >= session.startH * 60 && localMins < session.endH * 60;
+  }
+
+  const cards = sessions.map(s => {
+    const stats = getSessionStats(s);
+    const active = isActive(s);
+    const time = s.offsetMins !== null ? getLocalTime(s.offsetMins) : '';
+    const pnlPos = stats.totalPnL >= 0;
+    return `
+      <div class="session-card ${active ? 'session-active' : ''}">
+        <div class="session-card-header">
+          <div class="session-flag-name">
+            <span class="session-flag">${s.flag}</span>
+            <div>
+              <div class="session-name">${s.name}</div>
+              <div class="session-tz">${s.tz}</div>
+            </div>
+          </div>
+          <div class="session-time">${time}</div>
+        </div>
+        <div class="session-card-stats">
+          <div class="session-stat-row">
+            <span class="session-stat-label">Profit</span>
+            <span class="session-profit ${pnlPos ? 'positive' : 'negative'}">
+              ${pnlPos ? '↑' : '↓'} ${Math.abs(Number(stats.pct)).toFixed(2)}%
+            </span>
+          </div>
+          <div class="session-stat-bottom">
+            <div>
+              <div class="session-stat-label">Total Trades</div>
+              <div class="session-stat-big">${stats.count}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="session-stat-label">Win Rate</div>
+              <div class="session-stat-big">${stats.pct}%</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `<div class="sessions-grid">${cards}</div>`;
+}
+
+// ── WEEKLY P&L CALENDAR ────────────────────────────────────
+function weeklyCalendar() {
+  const year  = state.calendarDate.getFullYear();
+  const month = state.calendarDate.getMonth();
+  const monthName = state.calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  // Build daily P&L map
+  const pnlByDay = {};
+  state.trades
+    .filter(t => t.exit_date && new Date(t.exit_date).getMonth() === month && new Date(t.exit_date).getFullYear() === year)
+    .forEach(t => {
+      const d = new Date(t.exit_date).getDate();
+      pnlByDay[d] = (pnlByDay[d] || 0) + Number(t.pnl);
+    });
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDOW = new Date(year, month, 1).getDay(); // 0=Sun
+
+  // Split into weeks (Mon-Sun chunks for display)
+  const weeks = [];
+  let week = { label: '', days: [], pnl: 0 };
+  let weekNum = 1;
+
+  for (let i = 0; i < startDOW; i++) week.days.push(null); // padding
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    week.days.push({ day, pnl: pnlByDay[day] ?? null });
+    if (pnlByDay[day] != null) week.pnl += pnlByDay[day];
+    if (week.days.length === 7 || day === daysInMonth) {
+      week.label = `${weekNum}${weekNum===1?'st':weekNum===2?'nd':weekNum===3?'rd':'th'} Week`;
+      weeks.push({ ...week });
+      weekNum++;
+      week = { label: '', days: [], pnl: 0 };
+    }
+  }
+
+  const weekRows = weeks.map(w => {
+    const hasData = w.days.some(d => d && d.pnl !== null);
+    const cls = hasData ? (w.pnl > 0 ? 'week-positive' : w.pnl < 0 ? 'week-negative' : '') : '';
+    return `
+      <div class="week-block ${cls}">
+        <div class="week-label">${w.label}</div>
+        <div class="week-pnl">${w.pnl > 0 ? '+' : ''}$${w.pnl.toFixed(2)}</div>
+      </div>`;
+  }).join('');
+
+  // Daily grid
+  const cells = [];
+  for (let i = 0; i < startDOW; i++) cells.push('<div class="cal-cell empty"></div>');
+  for (let day = 1; day <= daysInMonth; day++) {
+    const pnl = pnlByDay[day] ?? null;
+    const hasTrade = pnl !== null;
+    const cls = hasTrade ? (pnl > 0 ? 'cal-cell profit' : pnl < 0 ? 'cal-cell loss' : 'cal-cell breakeven') : 'cal-cell';
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    cells.push(`
+      <div class="${cls}" onclick="viewCalendarDay('${ds}')">
+        <div class="cal-day-num">${day}</div>
+        ${hasTrade ? `<div class="cal-day-pnl">${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toFixed(0)}</div>` : ''}
+      </div>`);
+  }
+
+  const monthPnL = Object.values(pnlByDay).reduce((s,v) => s+v, 0);
+  const tradingDays = Object.keys(pnlByDay).length;
+  const winDays = Object.values(pnlByDay).filter(v => v > 0).length;
+
+  return `
+    <div class="card weekly-cal-card">
+      <div class="weekly-cal-header">
+        <div style="display:flex;align-items:center;gap:1rem">
+          <button class="cal-nav" onclick="changeCalendarMonth(-1)">‹</button>
+          <span class="weekly-cal-title">${monthName}</span>
+          <button class="cal-nav" onclick="changeCalendarMonth(1)">›</button>
+        </div>
+        <div class="weekly-cal-meta">
+          <span>Trading Days <strong>${tradingDays}</strong></span>
+          <span>Win Rate <strong>${tradingDays ? ((winDays/tradingDays)*100).toFixed(0) : 0}%</strong></span>
+        </div>
+      </div>
+      <div class="week-blocks">${weekRows || '<div style="color:var(--text-muted);font-size:0.8rem;padding:0.5rem">No trades this month</div>'}</div>
+      <div class="cal-grid-wrap">
+        <div class="cal-grid">
+          ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-header-cell">${d}</div>`).join('')}
+          ${cells.join('')}
+        </div>
+      </div>
+    </div>`;
 }
 
 // ── AUTH ──────────────────────────────────────────────────

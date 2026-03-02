@@ -1403,3 +1403,256 @@ body::before {
 .j-tab-bar { display:flex; gap:0.25rem; background:var(--bg-elevated); border-radius:var(--r-md); padding:0.25rem; margin-bottom:1.25rem; }
 .j-tab { flex:1; padding:0.5rem 0.75rem; border:none; border-radius:var(--r-sm); background:transparent; color:var(--text-secondary); font-size:0.82rem; font-weight:600; cursor:pointer; transition:all 0.15s; }
 .j-tab.active { background:var(--bg-card); color:var(--text-primary); }
+
+/* ═══════════════════════════════════════════════════════════
+   QUANTARIO v4 — Dashboard Redesign
+   Sessions · Sparklines · Weekly Calendar · Theme Polish
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── SIDEBAR RESTYLE ─────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-soft);
+  position: fixed; height: 100vh;
+  display: flex; flex-direction: column;
+  z-index: 100; overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: none;
+}
+.sidebar::-webkit-scrollbar { display: none; }
+
+.logo {
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 1.5rem 1.25rem 1rem;
+}
+.logo-icon svg { filter: drop-shadow(0 0 8px var(--orange-glow)); }
+.logo-text { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+.logo-text span { color: var(--orange); }
+
+/* Account balance widget in sidebar */
+.sidebar-balance {
+  margin: 0 0.75rem 1rem;
+  padding: 0.875rem 1rem;
+  background: var(--bg-card);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-soft);
+}
+.sidebar-balance-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+.sidebar-balance-value { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+.sidebar-balance-change { font-size: 0.72rem; margin-top: 0.2rem; }
+
+.nav-section-label {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+  color: var(--text-muted); text-transform: uppercase;
+  padding: 0.75rem 1.25rem 0.35rem;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 1.25rem; margin: 0.1rem 0.5rem;
+  border-radius: var(--r-md); border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 0.85rem; font-weight: 500;
+  cursor: pointer; transition: all 0.15s var(--ease);
+  width: calc(100% - 1rem); text-align: left;
+}
+.nav-item:hover { background: var(--bg-elevated); color: var(--text-primary); }
+.nav-item.active {
+  background: var(--orange-dim);
+  color: var(--orange);
+  font-weight: 600;
+}
+.nav-item.active .nav-icon svg { stroke: var(--orange); }
+.nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── STAT CARDS WITH SPARKLINES ─────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.65rem; } }
+
+.stat-card {
+  background: var(--bg-card);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border-soft);
+  padding: 1.25rem 1.25rem 0;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.2s, transform 0.2s;
+  display: flex; flex-direction: column;
+}
+.stat-card:hover { border-color: var(--border-bright); transform: translateY(-1px); }
+
+.stat-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+.stat-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-value { font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; font-family: 'JetBrains Mono', monospace; margin-bottom: 0.25rem; }
+.stat-value.positive { color: var(--green); }
+.stat-value.negative { color: var(--red); }
+.stat-change { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+.stat-sparkline { margin: 0 -1.25rem; }
+.stat-sparkline svg { display: block; }
+
+/* ── SECTION TITLE ───────────────────────────────────────── */
+.section-title {
+  font-size: 1rem; font-weight: 700;
+  color: var(--text-primary); margin-bottom: 0.875rem;
+  letter-spacing: -0.01em;
+}
+
+/* ── SESSIONS PANEL ──────────────────────────────────────── */
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+@media (max-width: 1100px) { .sessions-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .sessions-grid { grid-template-columns: 1fr 1fr; gap: 0.65rem; } }
+
+.session-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-xl);
+  padding: 1.1rem 1.1rem 1rem;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.session-card:hover { transform: translateY(-1px); border-color: var(--border-bright); }
+.session-card.session-active {
+  border-color: var(--orange);
+  background: linear-gradient(135deg, var(--bg-card), rgba(255,101,53,0.04));
+  box-shadow: 0 0 0 1px var(--orange-dim), 0 4px 20px rgba(255,101,53,0.08);
+}
+
+.session-card-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 0.875rem;
+}
+.session-flag-name { display: flex; align-items: center; gap: 0.6rem; }
+.session-flag { font-size: 1.4rem; line-height: 1; }
+.session-name { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); }
+.session-tz   { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.1rem; }
+.session-time { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+
+.session-card-stats { display: flex; flex-direction: column; gap: 0.6rem; }
+.session-stat-row { display: flex; justify-content: space-between; align-items: center; }
+.session-stat-label { font-size: 0.72rem; color: var(--text-muted); }
+.session-profit {
+  font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+}
+.session-profit.positive { background: rgba(48,209,88,0.12); color: var(--green); }
+.session-profit.negative { background: rgba(255,59,48,0.12);  color: var(--red); }
+.session-stat-bottom { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 0.1rem; }
+.session-stat-big { font-size: 1.4rem; font-weight: 800; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+
+/* ── WEEKLY P&L CALENDAR ─────────────────────────────────── */
+.weekly-cal-card { padding: 1.25rem; }
+.weekly-cal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.1rem; flex-wrap: wrap; gap: 0.5rem;
+}
+.weekly-cal-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.cal-nav {
+  width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--bg-elevated); color: var(--text-primary);
+  font-size: 1rem; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; transition: background 0.15s;
+}
+.cal-nav:hover { background: var(--bg-overlay); }
+.weekly-cal-meta { display: flex; gap: 1.25rem; font-size: 0.78rem; color: var(--text-secondary); }
+.weekly-cal-meta strong { color: var(--text-primary); }
+
+.week-blocks { display: flex; gap: 0.65rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
+.week-block {
+  flex: 1; min-width: 80px;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--r-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  text-align: center;
+  transition: transform 0.15s;
+}
+.week-block:hover { transform: translateY(-1px); }
+.week-block.week-positive { background: rgba(48,209,88,0.08);  border-color: rgba(48,209,88,0.2); }
+.week-block.week-negative { background: rgba(255,59,48,0.08);   border-color: rgba(255,59,48,0.2); }
+.week-label { font-size: 0.68rem; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.week-pnl { font-size: 0.95rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.week-positive .week-pnl { color: var(--green); }
+.week-negative .week-pnl { color: var(--red); }
+
+.cal-grid-wrap { overflow-x: auto; }
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 0.35rem; min-width: 420px;
+}
+.cal-header-cell {
+  font-size: 0.65rem; font-weight: 700; color: var(--text-muted);
+  text-align: center; padding: 0.35rem 0; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.cal-cell {
+  aspect-ratio: 1/1; border-radius: var(--r-sm);
+  background: var(--bg-elevated); border: 1px solid var(--border-soft);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 0.2rem; cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s; overflow: hidden;
+}
+.cal-cell:hover { border-color: var(--border-bright); transform: scale(1.04); }
+.cal-cell.empty { background: transparent; border-color: transparent; cursor: default; }
+.cal-cell.empty:hover { transform: none; }
+.cal-cell.profit   { background: rgba(48,209,88,0.1);  border-color: rgba(48,209,88,0.25); }
+.cal-cell.loss     { background: rgba(255,59,48,0.1);   border-color: rgba(255,59,48,0.25); }
+.cal-cell.breakeven{ background: rgba(255,159,10,0.08); border-color: rgba(255,159,10,0.2); }
+.cal-day-num { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; }
+.cal-day-pnl { font-size: 0.58rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; margin-top: 0.1rem; }
+.cal-cell.profit .cal-day-pnl   { color: var(--green); }
+.cal-cell.loss .cal-day-pnl     { color: var(--red); }
+
+/* ── LIGHT THEME — NEW COMPONENTS ────────────────────────── */
+[data-theme="light"] .stat-card,
+[data-theme="light"] .session-card,
+[data-theme="light"] .weekly-cal-card {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+[data-theme="light"] .stat-card:hover,
+[data-theme="light"] .session-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+[data-theme="light"] .stat-label,
+[data-theme="light"] .session-stat-label { color: #8e8e93; }
+[data-theme="light"] .stat-value,
+[data-theme="light"] .session-stat-big,
+[data-theme="light"] .weekly-cal-title,
+[data-theme="light"] .session-name,
+[data-theme="light"] .session-time { color: #1c1c1e; }
+[data-theme="light"] .stat-change,
+[data-theme="light"] .session-tz { color: #6e6e73; }
+[data-theme="light"] .cal-nav { background: #f2f2f7; border-color: rgba(0,0,0,0.08); color: #1c1c1e; }
+[data-theme="light"] .cal-nav:hover { background: #e5e5ea; }
+[data-theme="light"] .cal-cell { background: #f2f2f7; border-color: rgba(0,0,0,0.06); }
+[data-theme="light"] .cal-cell.profit   { background: rgba(48,209,88,0.12);  border-color: rgba(48,209,88,0.3); }
+[data-theme="light"] .cal-cell.loss     { background: rgba(255,59,48,0.1);   border-color: rgba(255,59,48,0.25); }
+[data-theme="light"] .cal-header-cell { color: #8e8e93; }
+[data-theme="light"] .week-block { background: #f2f2f7; border-color: rgba(0,0,0,0.06); }
+[data-theme="light"] .week-block.week-positive { background: rgba(48,209,88,0.1); }
+[data-theme="light"] .week-block.week-negative { background: rgba(255,59,48,0.08); }
+[data-theme="light"] .week-label { color: #8e8e93; }
+[data-theme="light"] .section-title { color: #1c1c1e; }
+[data-theme="light"] .session-card.session-active {
+  border-color: var(--orange);
+  background: rgba(255,101,53,0.04);
+  box-shadow: 0 0 0 1px rgba(255,101,53,0.2), 0 4px 20px rgba(255,101,53,0.08);
+}
+
+/* Sidebar balance in light mode */
+[data-theme="light"] .sidebar-balance {
+  background: #f2f2f7;
+  border-color: rgba(0,0,0,0.07);
+}
+[data-theme="light"] .sidebar-balance-label { color: #8e8e93; }
+[data-theme="light"] .sidebar-balance-value { color: #1c1c1e; }
+
+/* ── SIDEBAR BALANCE: add to render ─────────────────────── */
