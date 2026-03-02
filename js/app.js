@@ -309,8 +309,8 @@ function render() {
           </button>
           <button class="btn btn-theme-toggle btn-sm" style="width:100%;margin-top:0.5rem" onclick="toggleTheme()">
             ${state.theme === 'dark'
-              ? \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Light Mode\`
-              : \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Dark Mode\`
+              ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Light Mode`
+              : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Dark Mode`
             }
           </button>
           <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:0.5rem" onclick="handleLogout()">Logout</button>
@@ -332,8 +332,8 @@ function render() {
           <div style="display:flex;align-items:center;gap:0.5rem">
             <button class="btn-icon-theme" onclick="toggleTheme()" title="Toggle theme">
               ${state.theme === 'dark'
-                ? \`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>\`
-                : \`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>\`
+                ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`
+                : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
               }
             </button>
             <div class="sync-dot ${state.syncing ? 'syncing' : ''}" style="width:8px;height:8px"></div>
@@ -1556,22 +1556,22 @@ function onboardingModal() {
   ];
   const step = steps[state.onboardingStep - 1];
 
-  return \`
+  return `
     <div class="modal onboarding-backdrop">
       <div class="modal-content onboarding-modal" onclick="event.stopPropagation()">
         <!-- Step dots -->
         <div class="onboarding-dots">
-          \${[1,2,3].map(i => \`<div class="onboarding-dot \${i === state.onboardingStep ? 'active' : i < state.onboardingStep ? 'done' : ''}"></div>\`).join('')}
+          ${[1,2,3].map(i => `<div class="onboarding-dot ${i === state.onboardingStep ? 'active' : i < state.onboardingStep ? 'done' : ''}"></div>`).join('')}
         </div>
 
-        <div class="onboarding-icon">\${step.icon}</div>
-        <h2 class="onboarding-heading">\${step.heading}</h2>
-        <div class="onboarding-sub">\${step.sub}</div>
+        <div class="onboarding-icon">${step.icon}</div>
+        <h2 class="onboarding-heading">${step.heading}</h2>
+        <div class="onboarding-sub">${step.sub}</div>
 
         <div class="onboarding-actions">
-          \${!step.skipOnly
-            ? \`<button class="btn btn-primary" style="width:100%" onclick="
-                \${state.onboardingStep === 3 ? \`
+          ${!step.skipOnly
+            ? `<button class="btn btn-primary" style="width:100%" onclick="
+                ${state.onboardingStep === 3 ? `
                   (function(){
                     var d=document.getElementById('ob-daily')?.value||'';
                     var w=document.getElementById('ob-weekly')?.value||'';
@@ -1579,24 +1579,24 @@ function onboardingModal() {
                     state.goals={daily:d,weekly:w,monthly:m};
                     localStorage.setItem('q_goals',JSON.stringify(state.goals));
                   })();
-                \` : ''}
+                ` : ''}
                 nextOnboardingStep()
-              ">\${step.cta}</button>\`
+              ">${step.cta}</button>`
             : ''
           }
-          \${state.onboardingStep > 1
-            ? \`<button class="btn btn-secondary" style="width:100%;margin-top:0.5rem" onclick="nextOnboardingStep()">Skip for now</button>\`
+          ${state.onboardingStep > 1
+            ? `<button class="btn btn-secondary" style="width:100%;margin-top:0.5rem" onclick="nextOnboardingStep()">Skip for now</button>`
             : ''
           }
-          \${state.onboardingStep === 1
-            ? \`<button class="btn btn-secondary" style="width:100%;margin-top:0.5rem" onclick="dismissOnboarding()">I'll figure it out myself</button>\`
+          ${state.onboardingStep === 1
+            ? `<button class="btn btn-secondary" style="width:100%;margin-top:0.5rem" onclick="dismissOnboarding()">I'll figure it out myself</button>`
             : ''
           }
         </div>
 
         <button class="onboarding-close" onclick="dismissOnboarding()" title="Close">✕</button>
       </div>
-    </div>\`;
+    </div>`;
 }
 
 // ── GOALS VIEW ────────────────────────────────────────────
@@ -1617,59 +1617,59 @@ function goalsView(stats) {
     const pct = hasTarget ? Math.max(0, Math.min(100, (current / t) * 100)) : 0;
     const pos = current >= 0;
     const reached = hasTarget && current >= t;
-    return \`
-      <div class="goal-card \${reached ? 'goal-reached' : ''}">
-        \${reached ? '<div class="goal-badge">✓ Reached!</div>' : ''}
-        <div class="goal-period">\${label}</div>
-        <div class="goal-current \${pos ? 'positive' : 'negative'}">\${pos?'+':''}\$\${current.toFixed(2)}</div>
-        \${hasTarget
-          ? \`<div class="goal-target">Target: \$\${t.toFixed(0)}</div>
+    return `
+      <div class="goal-card ${reached ? 'goal-reached' : ''}">
+        ${reached ? '<div class="goal-badge">✓ Reached!</div>' : ''}
+        <div class="goal-period">${label}</div>
+        <div class="goal-current ${pos ? 'positive' : 'negative'}">${pos?'+':''}\$${current.toFixed(2)}</div>
+        ${hasTarget
+          ? `<div class="goal-target">Target: \$${t.toFixed(0)}</div>
              <div class="progress-bar" style="margin-top:0.75rem">
-               <div class="progress-fill" style="width:\${pct}%"></div>
+               <div class="progress-fill" style="width:${pct}%"></div>
              </div>
-             <div class="goal-pct">\${pct.toFixed(0)}% of goal</div>\`
-          : \`<div class="goal-no-target">No target set</div>\`
+             <div class="goal-pct">${pct.toFixed(0)}% of goal</div>`
+          : `<div class="goal-no-target">No target set</div>`
         }
-      </div>\`;
+      </div>`;
   }
 
-  return \`
+  return `
     <div class="page-header">
       <h1 class="header">Goals & Targets</h1>
       <button class="btn btn-primary hide-mobile" onclick="openGoalEditor()">✎ Edit Goals</button>
     </div>
 
     <div class="goals-grid">
-      \${goalCard('daily',   'Today',     todayPnL,  goals.daily)}
-      \${goalCard('weekly',  'This Week', weekPnL,   goals.weekly)}
-      \${goalCard('monthly', 'This Month',monthPnL,  goals.monthly)}
+      ${goalCard('daily',   'Today',     todayPnL,  goals.daily)}
+      ${goalCard('weekly',  'This Week', weekPnL,   goals.weekly)}
+      ${goalCard('monthly', 'This Month',monthPnL,  goals.monthly)}
     </div>
 
     <div class="card" style="margin-top:1.5rem">
       <div class="card-title">📈 All-Time Performance</div>
       <div class="goals-alltime">
         <div class="alltime-stat">
-          <div class="alltime-val">\${state.trades.length}</div>
+          <div class="alltime-val">${state.trades.length}</div>
           <div class="alltime-lbl">Total Trades</div>
         </div>
         <div class="alltime-stat">
-          <div class="alltime-val \${stats.totalPnL >= 0 ? 'positive' : 'negative'}">\${stats.totalPnL >= 0?'+':''}\$\${stats.totalPnL.toFixed(2)}</div>
+          <div class="alltime-val ${stats.totalPnL >= 0 ? 'positive' : 'negative'}">${stats.totalPnL >= 0?'+':''}\$${stats.totalPnL.toFixed(2)}</div>
           <div class="alltime-lbl">Total P&L</div>
         </div>
         <div class="alltime-stat">
-          <div class="alltime-val">\${stats.winRate}%</div>
+          <div class="alltime-val">${stats.winRate}%</div>
           <div class="alltime-lbl">Win Rate</div>
         </div>
         <div class="alltime-stat">
-          <div class="alltime-val">\${stats.profitFactor}</div>
+          <div class="alltime-val">${stats.profitFactor}</div>
           <div class="alltime-lbl">Profit Factor</div>
         </div>
         <div class="alltime-stat">
-          <div class="alltime-val">\${state.journalEntries.length}</div>
+          <div class="alltime-val">${state.journalEntries.length}</div>
           <div class="alltime-lbl">Journal Entries</div>
         </div>
         <div class="alltime-stat">
-          <div class="alltime-val">\${state.brokers.length}</div>
+          <div class="alltime-val">${state.brokers.length}</div>
           <div class="alltime-lbl">Connected Brokers</div>
         </div>
       </div>
@@ -1680,19 +1680,19 @@ function goalsView(stats) {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Daily Target ($)</label>
-          <input class="form-input" id="g-daily" placeholder="e.g. 200" value="\${esc(goals.daily)}">
+          <input class="form-input" id="g-daily" placeholder="e.g. 200" value="${esc(goals.daily)}">
         </div>
         <div class="form-group">
           <label class="form-label">Weekly Target ($)</label>
-          <input class="form-input" id="g-weekly" placeholder="e.g. 1000" value="\${esc(goals.weekly)}">
+          <input class="form-input" id="g-weekly" placeholder="e.g. 1000" value="${esc(goals.weekly)}">
         </div>
         <div class="form-group">
           <label class="form-label">Monthly Target ($)</label>
-          <input class="form-input" id="g-monthly" placeholder="e.g. 4000" value="\${esc(goals.monthly)}">
+          <input class="form-input" id="g-monthly" placeholder="e.g. 4000" value="${esc(goals.monthly)}">
         </div>
       </div>
       <button class="btn btn-primary btn-sm" onclick="saveGoals()">Save Targets</button>
-    </div>\`;
+    </div>`;
 }
 
 function saveGoals() {
@@ -1741,7 +1741,7 @@ function riskCalcView() {
 
   const r = rc.result;
 
-  return \`
+  return `
     <div class="page-header">
       <h1 class="header">Risk Calculator</h1>
     </div>
@@ -1750,15 +1750,15 @@ function riskCalcView() {
         <div class="card-title">⚙️ Position Parameters</div>
         <div class="form-group">
           <label class="form-label">Account Size ($) *</label>
-          <input type="number" class="form-input" id="rc-acc" placeholder="e.g. 10000" value="\${rc.accountSize || ''}">
+          <input type="number" class="form-input" id="rc-acc" placeholder="e.g. 10000" value="${rc.accountSize || ''}">
         </div>
         <div class="form-group">
           <label class="form-label" style="display:flex;justify-content:space-between">
             <span>Risk Per Trade (%)</span>
-            <span class="rc-pct-badge" id="rc-pct-lbl">\${rc.riskPct || 1}%</span>
+            <span class="rc-pct-badge" id="rc-pct-lbl">${rc.riskPct || 1}%</span>
           </label>
           <input type="range" class="form-range" id="rc-rpct" min="0.1" max="5" step="0.1"
-            value="\${rc.riskPct || 1}"
+            value="${rc.riskPct || 1}"
             oninput="document.getElementById('rc-pct-lbl').textContent=this.value+'%'">
           <div class="rc-range-labels"><span>0.1%</span><span>1%</span><span>2%</span><span>3%</span><span>5%</span></div>
         </div>
@@ -1766,23 +1766,23 @@ function riskCalcView() {
           <div class="form-group">
             <label class="form-label">Direction</label>
             <select class="form-select" id="rc-dir">
-              <option value="long"  \${rc.direction==='long'  ?'selected':''}>Long (Buy)</option>
-              <option value="short" \${rc.direction==='short' ?'selected':''}>Short (Sell)</option>
+              <option value="long"  ${rc.direction==='long'  ?'selected':''}>Long (Buy)</option>
+              <option value="short" ${rc.direction==='short' ?'selected':''}>Short (Sell)</option>
             </select>
           </div>
           <div class="form-group">
             <label class="form-label">Entry Price *</label>
-            <input type="number" step="any" class="form-input" id="rc-ep" placeholder="0.00" value="\${rc.entryPrice || ''}">
+            <input type="number" step="any" class="form-input" id="rc-ep" placeholder="0.00" value="${rc.entryPrice || ''}">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Stop Loss *</label>
-            <input type="number" step="any" class="form-input" id="rc-sl" placeholder="0.00" value="\${rc.stopLoss || ''}">
+            <input type="number" step="any" class="form-input" id="rc-sl" placeholder="0.00" value="${rc.stopLoss || ''}">
           </div>
           <div class="form-group">
             <label class="form-label">Take Profit</label>
-            <input type="number" step="any" class="form-input" id="rc-tp" placeholder="Optional" value="\${rc.takeProfit || ''}">
+            <input type="number" step="any" class="form-input" id="rc-tp" placeholder="Optional" value="${rc.takeProfit || ''}">
           </div>
         </div>
         <button class="btn btn-primary" style="width:100%" onclick="(function(){
@@ -1812,41 +1812,41 @@ function riskCalcView() {
       </div>
 
       <div class="riskcalc-results">
-        \${r ? \`
+        ${r ? `
           <div class="rc-result-card rc-primary">
             <div class="rc-result-label">Position Size</div>
-            <div class="rc-result-value">\${r.posSize.toFixed(r.posSize < 10 ? 4 : 2)}</div>
+            <div class="rc-result-value">${r.posSize.toFixed(r.posSize < 10 ? 4 : 2)}</div>
             <div class="rc-result-sub">units / shares / contracts</div>
           </div>
           <div class="rc-result-card">
             <div class="rc-result-label">Max Risk</div>
-            <div class="rc-result-value negative">-\$\${r.riskAmt.toFixed(2)}</div>
-            <div class="rc-result-sub">\${rc.riskPct}% of account</div>
+            <div class="rc-result-value negative">-\$${r.riskAmt.toFixed(2)}</div>
+            <div class="rc-result-sub">${rc.riskPct}% of account</div>
           </div>
           <div class="rc-result-card">
             <div class="rc-result-label">Stop Distance</div>
-            <div class="rc-result-value">\${r.slDist.toFixed(4)}</div>
+            <div class="rc-result-value">${r.slDist.toFixed(4)}</div>
             <div class="rc-result-sub">price points</div>
           </div>
-          \${r.rr ? \`
-            <div class="rc-result-card \${parseFloat(r.rr) >= 2 ? 'rc-good' : parseFloat(r.rr) < 1 ? 'rc-bad' : ''}">
+          ${r.rr ? `
+            <div class="rc-result-card ${parseFloat(r.rr) >= 2 ? 'rc-good' : parseFloat(r.rr) < 1 ? 'rc-bad' : ''}">
               <div class="rc-result-label">Risk/Reward</div>
-              <div class="rc-result-value">1 : \${r.rr}</div>
-              <div class="rc-result-sub">\${parseFloat(r.rr) >= 2 ? '✓ Good setup' : parseFloat(r.rr) < 1 ? '⚠ Poor ratio' : 'Acceptable'}</div>
+              <div class="rc-result-value">1 : ${r.rr}</div>
+              <div class="rc-result-sub">${parseFloat(r.rr) >= 2 ? '✓ Good setup' : parseFloat(r.rr) < 1 ? '⚠ Poor ratio' : 'Acceptable'}</div>
             </div>
             <div class="rc-result-card rc-good">
               <div class="rc-result-label">Potential Profit</div>
-              <div class="rc-result-value positive">+\$\${r.potential}</div>
+              <div class="rc-result-value positive">+\$${r.potential}</div>
               <div class="rc-result-sub">if TP is hit</div>
             </div>
-          \` : ''}
-        \` : \`
+          ` : ''}
+        ` : `
           <div class="rc-empty">
             <div style="font-size:2.5rem;margin-bottom:1rem;opacity:0.3">🧮</div>
             <div style="font-size:0.9rem;font-weight:700;margin-bottom:0.4rem">Results appear here</div>
             <div style="font-size:0.78rem;color:var(--text-muted)">Fill in the form and click Calculate</div>
           </div>
-        \`}
+        `}
       </div>
     </div>
 
@@ -1870,7 +1870,7 @@ function riskCalcView() {
           <div><strong>Never move your stop</strong> — Set it before entry, respect it always</div>
         </div>
       </div>
-    </div>\`;
+    </div>`;
 }
 
 // ── LEADERBOARD VIEW ──────────────────────────────────────
@@ -1904,7 +1904,7 @@ function leaderboardView(stats) {
 
   const you = leaderData.find(p => p.isYou);
 
-  return \`
+  return `
     <div class="page-header">
       <h1 class="header">Leaderboard</h1>
       <span class="lb-beta-tag">Beta</span>
@@ -1913,18 +1913,18 @@ function leaderboardView(stats) {
     <!-- Your public card -->
     <div class="card lb-profile-card">
       <div class="lb-profile-top">
-        <div class="lb-avatar">\${initial}</div>
+        <div class="lb-avatar">${initial}</div>
         <div>
-          <div class="lb-profile-name">\${esc(user.name || 'You')}</div>
-          <div class="lb-profile-handle">@\${esc((user.email||'').split('@')[0] || 'trader')}</div>
+          <div class="lb-profile-name">${esc(user.name || 'You')}</div>
+          <div class="lb-profile-handle">@${esc((user.email||'').split('@')[0] || 'trader')}</div>
         </div>
-        <div class="lb-profile-rank">#\${you ? you.rank : '—'}</div>
+        <div class="lb-profile-rank">#${you ? you.rank : '—'}</div>
       </div>
       <div class="lb-profile-stats">
-        <div class="lb-pstat"><div class="lb-pval \${stats.totalPnL>=0?'positive':'negative'}">\${stats.totalPnL>=0?'+':''}\$\${parseFloat(stats.totalPnL).toFixed(0)}</div><div class="lb-plbl">Total P&L</div></div>
-        <div class="lb-pstat"><div class="lb-pval">\${stats.winRate}%</div><div class="lb-plbl">Win Rate</div></div>
-        <div class="lb-pstat"><div class="lb-pval">\${state.trades.length}</div><div class="lb-plbl">Trades</div></div>
-        <div class="lb-pstat"><div class="lb-pval">\${stats.profitFactor}</div><div class="lb-plbl">Prof. Factor</div></div>
+        <div class="lb-pstat"><div class="lb-pval ${stats.totalPnL>=0?'positive':'negative'}">${stats.totalPnL>=0?'+':''}\$${parseFloat(stats.totalPnL).toFixed(0)}</div><div class="lb-plbl">Total P&L</div></div>
+        <div class="lb-pstat"><div class="lb-pval">${stats.winRate}%</div><div class="lb-plbl">Win Rate</div></div>
+        <div class="lb-pstat"><div class="lb-pval">${state.trades.length}</div><div class="lb-plbl">Trades</div></div>
+        <div class="lb-pstat"><div class="lb-pval">${stats.profitFactor}</div><div class="lb-plbl">Prof. Factor</div></div>
       </div>
       <div style="display:flex;gap:0.75rem;margin-top:1rem">
         <button class="btn btn-secondary btn-sm" onclick="toast('Public profile sharing coming soon!','info')">🔗 Share Profile</button>
@@ -1943,30 +1943,30 @@ function leaderboardView(stats) {
           <div class="lb-th lb-col-wr">Win Rate</div>
           <div class="lb-th lb-col-score hide-mobile">Score</div>
         </div>
-        \${leaderData.map(p => \`
-          <div class="lb-row \${p.isYou ? 'lb-row-you' : ''}">
+        ${leaderData.map(p => `
+          <div class="lb-row ${p.isYou ? 'lb-row-you' : ''}">
             <div class="lb-col-rank">
-              \${p.rank <= 3
-                ? \`<span class="lb-medal">\${['🥇','🥈','🥉'][p.rank-1]}</span>\`
-                : \`<span class="lb-rank-num">#\${p.rank}</span>\`
+              ${p.rank <= 3
+                ? `<span class="lb-medal">${['🥇','🥈','🥉'][p.rank-1]}</span>`
+                : `<span class="lb-rank-num">#${p.rank}</span>`
               }
             </div>
             <div class="lb-col-name">
-              <div class="lb-row-avatar">\${p.name.charAt(0)}</div>
+              <div class="lb-row-avatar">${p.name.charAt(0)}</div>
               <div>
-                <div class="lb-row-name">\${p.isYou ? '<strong>You</strong>' : p.name} \${p.badge}</div>
-                \${p.isYou ? '<div class="lb-row-sub" style="color:var(--orange)">Your position</div>' : ''}
+                <div class="lb-row-name">${p.isYou ? '<strong>You</strong>' : p.name} ${p.badge}</div>
+                ${p.isYou ? '<div class="lb-row-sub" style="color:var(--orange)">Your position</div>' : ''}
               </div>
             </div>
-            <div class="lb-col-pnl \${p.totalPnL>=0?'positive':'negative'}">\${p.totalPnL>=0?'+':''}\$\${p.totalPnL.toLocaleString()}</div>
-            <div class="lb-col-wr">\${p.winRate}%</div>
-            <div class="lb-col-tr hide-mobile">\${p.trades}</div>
-          </div>\`).join('')}
+            <div class="lb-col-pnl ${p.totalPnL>=0?'positive':'negative'}">${p.totalPnL>=0?'+':''}\$${p.totalPnL.toLocaleString()}</div>
+            <div class="lb-col-wr">${p.winRate}%</div>
+            <div class="lb-col-tr hide-mobile">${p.trades}</div>
+          </div>`).join('')}
       </div>
       <div style="text-align:center;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.73rem;color:var(--text-muted)">
         🚧 Live leaderboard with real community data coming soon. Log more trades to climb the ranks!
       </div>
-    </div>\`;
+    </div>`;
 }
 
 // ── NAVIGATION ────────────────────────────────────────────
