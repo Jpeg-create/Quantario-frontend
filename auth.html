@@ -5,72 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quantario - Sign In</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="stylesheet" href="/css/styles.css">
+  <script>(function(){var t=localStorage.getItem('q-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
   <style>
     #google-btn-container { display:flex; justify-content:center; min-height:44px; align-items:center; }
     .google-note { font-size:0.72rem; color:var(--text-secondary); text-align:center; margin-top:0.6rem; line-height:1.5; }
-    .auth-token-box { background:var(--bg-base); border:1px solid var(--border-color); border-radius:6px; padding:0.75rem; font-size:0.72rem; word-break:break-all; color:var(--orange); cursor:pointer; font-family:monospace; margin:0.5rem 0; transition:border-color 0.2s; }
-    .auth-token-box:hover { border-color:var(--orange); }
+    .auth-token-box { background:var(--bg-base); border:1px solid var(--border); border-radius:6px; padding:0.75rem; font-size:0.72rem; word-break:break-all; color:var(--cyan); cursor:pointer; font-family:monospace; margin:0.5rem 0; transition:border-color 0.2s; }
+    .auth-token-box:hover { border-color:var(--cyan); }
     .password-strength { display:none; margin-top:0.5rem; align-items:center; gap:0.5rem; }
     .pw-bar  { flex:1; height:4px; background:var(--bg-tertiary); border-radius:2px; overflow:hidden; }
     .pw-fill { height:100%; border-radius:2px; transition:width 0.3s, background 0.3s; }
     .pw-label{ font-size:0.72rem; min-width:48px; font-family:'JetBrains Mono',monospace; }
-    /* Auth theme toggle */
-    .auth-theme-btn {
-      position:fixed; top:1.25rem; right:1.25rem; z-index:100;
-      width:36px; height:36px; border-radius:50%; cursor:pointer;
-      background:var(--bg-elevated); border:1px solid var(--border);
-      color:var(--text-secondary); display:flex; align-items:center;
-      justify-content:center; transition:all 0.18s;
-    }
-    .auth-theme-btn:hover { color:var(--orange); border-color:var(--border-orange); background:var(--orange-dim); }
-    [data-theme="light"] .auth-page {
-      background:
-        radial-gradient(ellipse 60% 40% at 20% -5%, rgba(232,80,30,0.05) 0%, transparent 55%),
-        radial-gradient(ellipse 45% 35% at 85% 105%, rgba(217,36,90,0.03) 0%, transparent 55%),
-        #FFFCFB;
-    }
-    [data-theme="light"] .auth-box {
-      background:#FFFFFF;
-      border-color:rgba(0,0,0,0.09);
-      box-shadow:0 8px 48px rgba(0,0,0,0.09),0 0 60px rgba(232,80,30,0.03);
-    }
-    [data-theme="light"] .auth-tabs { background:#F2EDE9; border-color:rgba(0,0,0,0.09); }
-    [data-theme="light"] .google-btn { background:#F7F2EF; border-color:rgba(0,0,0,0.09); }
-    [data-theme="light"] .google-btn:hover { background:#F0EBE7; }
-    [data-theme="light"] .auth-alert.success { background:rgba(232,80,30,0.06); border-color:rgba(232,80,30,0.14); color:#C85C1A; }
-    [data-theme="light"] .wake-banner { background:rgba(196,123,10,0.07); }
-    [data-theme="light"] .pw-bar { background:rgba(0,0,0,0.07); }
   </style>
-  <script>
-    // Apply saved theme immediately (avoids flash)
-    (function(){
-      const t = localStorage.getItem('q_theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', t);
-    })();
-  </script>
 </head>
 <body class="auth-page">
-  <!-- Theme toggle -->
-  <button class="auth-theme-btn" id="auth-theme-btn" onclick="(function(){
-    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-    const nxt = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', nxt);
-    localStorage.setItem('q_theme', nxt);
-    const btn = document.getElementById('auth-theme-btn');
-    btn.innerHTML = nxt === 'dark'
-      ? '<svg width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><circle cx=\'12\' cy=\'12\' r=\'5\'/><line x1=\'12\' y1=\'1\' x2=\'12\' y2=\'3\'/><line x1=\'12\' y1=\'21\' x2=\'12\' y2=\'23\'/><line x1=\'4.22\' y1=\'4.22\' x2=\'5.64\' y2=\'5.64\'/><line x1=\'18.36\' y1=\'18.36\' x2=\'19.78\' y2=\'19.78\'/><line x1=\'1\' y1=\'12\' x2=\'3\' y2=\'12\'/><line x1=\'21\' y1=\'12\' x2=\'23\' y2=\'12\'/><line x1=\'4.22\' y1=\'19.78\' x2=\'5.64\' y2=\'18.36\'/><line x1=\'18.36\' y1=\'5.64\' x2=\'19.78\' y2=\'4.22\'/></svg>'
-      : '<svg width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z\'/></svg>';
-  })()" title="Toggle theme" aria-label="Toggle light/dark mode">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-  </button>
   <div class="auth-box">
 
     <div class="auth-header">
       <div class="auth-logo">
-        <div class="auth-logo-icon"><svg width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vgl" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FF6535"/><stop offset="100%" stop-color="#FF2D6B"/></linearGradient></defs><circle cx="24" cy="24" r="21" stroke="url(#vgl)" stroke-width="2.5" fill="rgba(255,101,53,0.05)"/><circle cx="24" cy="24" r="15" stroke="url(#vgl)" stroke-width="1.5" fill="rgba(255,101,53,0.04)"/><line x1="3" y1="24" x2="9" y2="24" stroke="url(#vgl)" stroke-width="2.5" stroke-linecap="round"/><circle cx="24" cy="7" r="2" fill="url(#vgl)"/><circle cx="24" cy="41" r="2" fill="url(#vgl)"/><circle cx="7" cy="24" r="2" fill="url(#vgl)"/><circle cx="41" cy="24" r="2" fill="url(#vgl)"/><rect x="13" y="28" width="3" height="6" rx="0.5" fill="#FF6535"/><line x1="14.5" y1="26" x2="14.5" y2="28" stroke="#FF6535" stroke-width="1.2"/><rect x="19" y="21" width="3" height="10" rx="0.5" fill="#FF2D6B"/><line x1="20.5" y1="18" x2="20.5" y2="21" stroke="#FF2D6B" stroke-width="1.2"/><rect x="25" y="24" width="3" height="8" rx="0.5" fill="#FF6535"/><line x1="26.5" y1="21" x2="26.5" y2="24" stroke="#FF6535" stroke-width="1.2"/><rect x="31" y="17" width="3" height="13" rx="0.5" fill="#FF2D6B"/><line x1="32.5" y1="14" x2="32.5" y2="17" stroke="#FF2D6B" stroke-width="1.2"/><polyline points="13,29 19,22 25,25 32,15" stroke="#FF2D6B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+        <div class="auth-logo-icon"><svg width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vgl" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#a3e635"/></linearGradient></defs><circle cx="24" cy="24" r="21" stroke="url(#vgl)" stroke-width="2.5" fill="rgba(0,212,255,0.05)"/><circle cx="24" cy="24" r="15" stroke="url(#vgl)" stroke-width="1.5" fill="rgba(0,212,255,0.04)"/><line x1="3" y1="24" x2="9" y2="24" stroke="url(#vgl)" stroke-width="2.5" stroke-linecap="round"/><circle cx="24" cy="7" r="2" fill="url(#vgl)"/><circle cx="24" cy="41" r="2" fill="url(#vgl)"/><circle cx="7" cy="24" r="2" fill="url(#vgl)"/><circle cx="41" cy="24" r="2" fill="url(#vgl)"/><rect x="13" y="28" width="3" height="6" rx="0.5" fill="#00d4ff"/><line x1="14.5" y1="26" x2="14.5" y2="28" stroke="#00d4ff" stroke-width="1.2"/><rect x="19" y="21" width="3" height="10" rx="0.5" fill="#a3e635"/><line x1="20.5" y1="18" x2="20.5" y2="21" stroke="#a3e635" stroke-width="1.2"/><rect x="25" y="24" width="3" height="8" rx="0.5" fill="#00d4ff"/><line x1="26.5" y1="21" x2="26.5" y2="24" stroke="#00d4ff" stroke-width="1.2"/><rect x="31" y="17" width="3" height="13" rx="0.5" fill="#a3e635"/><line x1="32.5" y1="14" x2="32.5" y2="17" stroke="#a3e635" stroke-width="1.2"/><polyline points="13,29 19,22 25,25 32,15" stroke="#a3e635" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
         <div class="auth-logo-text">Quan<span>tario</span></div>
       </div>
       <div class="auth-tagline">Your professional trading journal</div>
