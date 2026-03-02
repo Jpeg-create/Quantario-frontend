@@ -2884,10 +2884,12 @@ async function doQuickSave() {
   notes  = notes  ? notes.trim() : '';
   if (!symbol || !pnl || !date) { toast('Symbol, P&L, and date are required','error'); return; }
   try {
-    await api.addTrade({ symbol:symbol, pnl:parseFloat(pnl), direction:dir, asset_type:asset, entry_date:date, exit_date:date, notes:notes||null, quantity:1, entry_price:0, exit_price:0 });
+    await api.createTrade({ symbol:symbol, pnl:parseFloat(pnl), direction:dir, asset_type:asset, entry_date:date, exit_date:date, notes:notes||null, quantity:1, entry_price:0, exit_price:0 });
     state.showQuickAdd = false;
-    await loadTrades();
+    // Reload trades
+    try { const t = await api.getTrades(); if (t && t.data) state.trades = t.data; } catch(e) {}
     toast('Trade added!','success');
+    render();
   } catch(e) { toast(e.message||'Failed to save','error'); }
 }
 
@@ -2921,8 +2923,8 @@ async function doSaveStructuredJournal() {
   var btn = document.getElementById('jsave');
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
   try {
-    await api.addJournalEntry({ entry_date:date, content:content });
-    state.journalEntries = await api.getJournalEntries();
+    await api.createJournal({ entry_date:date, content:content });
+    var jResp = await api.getJournal(); state.journalEntries = jResp.data || [];
     toast('Entry saved!','success'); render();
   } catch(e) {
     toast(e.message||'Failed to save','error');
